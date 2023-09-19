@@ -1,0 +1,130 @@
+@model SS15Laundry.Models.PickUp
+
+@{
+    ViewData["Title"] = "Create";
+}
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row">
+        <div class="col-3">
+            <div class="form-group">
+                <label for="Search" class="control-label">Item</label>
+                <select id="Search" class="form-select" asp-items="ViewBag.Item">
+                    <option>Please select</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="form-group">
+                <label asp-for="CustomerId" class="control-label"></label>
+                <select asp-for="CustomerId" class="form-select" asp-items="ViewBag.Customer"></select>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="form-group">
+                <label asp-for="EmployeeId" class="control-label"></label>
+                <select asp-for="EmployeeId" class="form-select" asp-items="ViewBag.Employee"></select>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="form-group">
+                <label asp-for="IssueDate" class="control-label"></label>
+                <input asp-for="IssueDate" class="form-control" />
+                <span asp-validation-for="IssueDate" class="text-danger"></span>
+            </div>
+
+        </div>
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col-8">
+            <table class="table table-bordered" id="saleList">
+                <thead>
+                    <tr>
+                        <th>ITEM</th>
+                        <th>PRICE</th>
+                        <th>QTY</th>
+                        <th>AMOUNT</th>
+                        <th>ACTION</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="col-4">
+            <div class="form-group">
+                <label asp-for="Total" class="control-label"></label>
+                <input readonly asp-for="Total" class="form-control" />
+                <span asp-validation-for="Total" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Discount" class="control-label"></label>
+                <input asp-for="Discount" class="form-control" />
+                <span asp-validation-for="Discount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="GrandTotal" class="control-label"></label>
+                <input readonly asp-for="GrandTotal" class="form-control" />
+                <span asp-validation-for="GrandTotal" class="text-danger"></span>
+            </div>
+            <br />
+            <div class="form-group">
+                <input type="button" value="Create" class="btn btn-primary" />
+            </div>
+        </div>
+    </div>
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function () {
+            $("#Search").change(function () {
+                var id = $("#Search").val();
+                var i = 0;
+                var b = false;
+                $("#saleList > tbody > tr").each(function () {
+                    var itemid = document.getElementsByName("itemIds[]")[i].value;
+                    if (id === itemid) {
+                        b = true;
+                        var qty = $(this).closest("tr").find("td:eq(2)").text();
+                        var price = $(this).closest("tr").find("td:eq(1)").text();
+                        $(this).closest("tr").find("td:eq(2)").text(Number(qty) + 1);
+                        $(this).closest("tr").find("td:eq(3)").text((Number(qty) + 1) * Number(price));
+                        Calculation();
+                    }
+                    i++;
+                });
+                if (b == false) {
+                    $.ajax({
+                        method: "GET",
+                        url: "/PickUp/GetItem/?Id=" + id,
+                        contentType: "application/json",
+                        success: function (data) {
+                            console.log(data);
+                            var row = "<tr><td><input hidden name='itemIds[]' value='" + data.itemId + "'/>" + data.itemName;
+                            row += "</td><td>" + data.price;
+                            row += "</td><td>1</td>";
+                            row += "<td>" + data.price;
+                            row += "</td><td><button class='btn btn-warning'>-</button> <button class='btn btn-success'>+</button> ";
+                            row += "<button class='btn btn-danger'>Rem</button></td></tr>";
+                            $("#saleList").append(row);
+                            Calculation();
+                        }, error: function (error) {
+                            console.log(error);
+                        }
+                    })
+                }
+            });
+        });
+        function Calculation() {
+            var total = 0;
+            $("#saleList > tbody > tr").each(function () {
+                var amount = $(this).closest("tr").find("td:eq(3)").text();
+                total += Number(amount);
+            });
+            $("#Total").val(total);
+        }
+    </script>
+}
